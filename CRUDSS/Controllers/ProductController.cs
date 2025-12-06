@@ -40,7 +40,7 @@
                 var productDTO = _mapper.Map<ProductDTO>(product);
                 return Ok(productDTO);
             }
-            [HttpPost]
+            [HttpPost("CreateProduct")]
             public async Task<IActionResult> CreateProduct([FromBody] ProductDTO productDTO)
             {
                 var product = _mapper.Map<DAL.Models.Product>(productDTO);
