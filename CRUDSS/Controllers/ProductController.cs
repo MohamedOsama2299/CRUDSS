@@ -60,8 +60,9 @@
                 await _context.SaveChangesAsync();
                 return NoContent();
             }
-        [HttpPut("{id}")]
-            public async Task<IActionResult> UpdateProduct(int id, ProductDTO productDTO)
+        [HttpPut("UpdateProduct/{id}")]
+
+        public async Task<IActionResult> UpdateProduct(int id, ProductDTO productDTO)
             {
                 if (id != productDTO.Id)
                     return BadRequest();
