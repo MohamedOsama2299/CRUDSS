@@ -4,7 +4,7 @@ using System.Text;
 
 namespace PL.DTOS
 {
-   public class ProductDTO
+   public class ProductDTO : BaseDTO
     {
         public string Name { get; set; }
         public decimal Price { get; set; }

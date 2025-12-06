@@ -41,8 +41,9 @@
                 return Ok(productDTO);
             }
             [HttpPost("CreateProduct")]
-            public async Task<IActionResult> CreateProduct([FromBody] ProductDTO productDTO)
+            public async Task<IActionResult> CreateProduct(ProductDTO productDTO)
             {
+
                 var product = _mapper.Map<DAL.Models.Product>(productDTO);
                 _context.Products.Add(product);
                 await _context.SaveChangesAsync();
@@ -56,6 +57,19 @@
                 if (product == null)
                     return NotFound();
                 _context.Products.Remove(product);
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+        [HttpPut("{id}")]
+            public async Task<IActionResult> UpdateProduct(int id, ProductDTO productDTO)
+            {
+                if (id != productDTO.Id)
+                    return BadRequest();
+                var product = await _context.Products.FindAsync(id);
+                if (product == null)
+                    return NotFound();
+                _mapper.Map(productDTO, product);
+                _context.Entry(product).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
                 return NoContent();
             }
