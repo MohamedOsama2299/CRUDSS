@@ -1,8 +1,10 @@
 using BLL.Interface;
+using BLL.Interface.Services.Abstractions;
 using BLL.Repository;
 using DAL.Contexts;
 using Microsoft.EntityFrameworkCore;
 using PL.Mapping;
+using Services;
 
 namespace CRUDSS
 {
@@ -17,7 +19,9 @@ namespace CRUDSS
             builder.Services.AddDbContext<CRUDSDbContext>(options =>
                 options.UseSqlite(connectionString));
 
-            builder.Services.AddScoped(typeof(ICrudsRepository<>), typeof(CrudsRepository<>));
+            builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+            builder.Services.AddScoped<IProductRepository, ProductRepository>();
+
             builder.Services.AddAutoMapper(E => E.AddProfile(new CRUDSProfile()));
 
             builder.Services.AddControllers();

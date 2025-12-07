@@ -1,78 +1,85 @@
-    using AutoMapper;
-    using DAL.Contexts;
-    using Microsoft.AspNetCore.Mvc;
-    using Microsoft.EntityFrameworkCore;
-    using PL.DTOS;
+using AutoMapper;
+using BLL.Interface.Services.Abstractions;
+using DAL.Models;
+using Microsoft.AspNetCore.Mvc;
+using PL.DTOS;
 
-    namespace CRUDSS.Controllers
+[Route("api/[controller]")]
+[ApiController]
+public class ProductController : ControllerBase
+{
+    private readonly IProductRepository _productRepository;
+    private readonly IMapper _mapper;
+
+    public ProductController(IProductRepository productRepository, IMapper mapper)
     {
-
-        [Route("api/[controller]")]
-        [ApiController]
-        public class ProductController : ControllerBase
-        {
-            private readonly CRUDSDbContext _context;
-            private readonly IMapper _mapper;
-
-            public ProductController(CRUDSDbContext context, IMapper mapper)
-            {
-                _context = context;
-                _mapper = mapper;
-            }
-            [HttpGet]
-            public async Task<IActionResult> GetAllProducts()
-            {
-                var products = await _context.Products
-                    .Include(p => p.Category)
-                    .ToListAsync();
-
-                var productDTOs = _mapper.Map<List<ProductDTO>>(products);
-                return Ok(productDTOs);
-            }
-            [HttpGet("{id}")]
-            public async Task<IActionResult> GetProduct(int id)
-            {
-                var product = await _context.Products
-                    .Include(p => p.Category)
-                    .FirstOrDefaultAsync(p => p.Id == id);
-                if (product == null)
-                    return NotFound();
-                var productDTO = _mapper.Map<ProductDTO>(product);
-                return Ok(productDTO);
-            }
-            [HttpPost("CreateProduct")]
-            public async Task<IActionResult> CreateProduct(ProductDTO productDTO)
-            {
-
-                var product = _mapper.Map<DAL.Models.Product>(productDTO);
-                _context.Products.Add(product);
-                await _context.SaveChangesAsync();
-                return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, productDTO);
-            }
-
-            [HttpDelete("{id}")]
-            public async Task<IActionResult> DeleteProduct(int id)
-            {
-                var product = await _context.Products.FindAsync(id);
-                if (product == null)
-                    return NotFound();
-                _context.Products.Remove(product);
-                await _context.SaveChangesAsync();
-                return NoContent();
-            }
-        [HttpPut("UpdateProduct/{id}")]
-
-        public async Task<IActionResult> UpdateProduct(int id, ProductDTO productDTO)
-            {
-                if (id != productDTO.Id)
-                    return BadRequest();
-                var product = await _context.Products.FindAsync(id);
-                if (product == null)
-                    return NotFound();
-                _mapper.Map(productDTO, product);
-                _context.Entry(product).State = EntityState.Modified;
-                await _context.SaveChangesAsync();
-                return NoContent();
-            }
-        }
+        _productRepository = productRepository;
+        _mapper = mapper;
     }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAllProducts()
+    {
+        var products = await _productRepository.GetAllAsync();
+        return Ok(_mapper.Map<List<ProductDTO>>(products));
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetProduct(int id)
+    {
+        var product = await _productRepository.GetByIdAsync(id);
+        if (product == null) return NotFound();
+        return Ok(_mapper.Map<ProductDTO>(product));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateProduct(ProductDTO dto)
+    {
+        var product = _mapper.Map<Product>(dto);
+        var created = await _productRepository.CreateAsync(product);
+        return CreatedAtAction(nameof(GetProduct), new { id = created.Id }, _mapper.Map<ProductDTO>(created));
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateProduct(int id, ProductDTO dto)
+    {
+        if (id != dto.Id) return BadRequest();
+        var product = _mapper.Map<Product>(dto);
+        var updated = await _productRepository.UpdateAsync(id, product);
+        if (updated == null) return NotFound();
+        return Ok(_mapper.Map<ProductDTO>(updated));
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteProduct(int id)
+    {
+        var deleted = await _productRepository.DeleteAsync(id);
+        if (!deleted) return NotFound();
+        return NoContent();
+    }
+
+    [HttpDelete("all")]
+    public async Task<IActionResult> DeleteAllProducts()
+    {
+        var products = await _productRepository.GetAllAsync();
+        foreach (var p in products) await _productRepository.DeleteAsync(p.Id);
+        return NoContent();
+    }
+
+    [HttpGet("search")]
+    public async Task<IActionResult> Search([FromQuery] ProductSearchDTO search)
+    {
+        if (search == null) return BadRequest("Search parameters cannot be null.");
+        var products = await _productRepository.SearchAsync(search);
+        return Ok(_mapper.Map<List<ProductDTO>>(products));
+    }
+
+    [HttpGet("{id}/FinalPrice")]
+    public async Task<IActionResult> CalculateFinalPrice(int id)
+    {
+        var final = await _productRepository.CalculateFinalPriceAsync(id);
+        if (final == null) return NotFound();
+        return Ok(new { FinalPrice = final });
+    }
+
+}
