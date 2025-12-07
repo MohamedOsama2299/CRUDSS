@@ -6,6 +6,6 @@ namespace PL.DTOS
 {
       public class CategoryDTO : BaseDTO
     {
-        public string name{ get; set; }
+        
     }
 }
