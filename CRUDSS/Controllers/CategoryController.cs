@@ -19,52 +19,111 @@ public class CategoryController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAllCategories()
     {
-        var categories = await _categoryRepository.GetAllAsync();
-        return Ok(_mapper.Map<List<CategoryDTO>>(categories));
+        try
+        {
+            var categories = await _categoryRepository.GetAllAsync();
+            return Ok(_mapper.Map<List<CategoryDTO>>(categories));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error retrieving categories", details = ex.Message });
+        }
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetCategoryById(int id)
     {
-        var category = await _categoryRepository.GetByIdAsync(id);
-        if (category == null) return NotFound();
-        return Ok(_mapper.Map<CategoryDTO>(category));
+        try
+        {
+            var category = await _categoryRepository.GetByIdAsync(id);
+            if (category == null)
+                return NotFound(new { message = $"Category with ID {id} not found" });
+
+            return Ok(_mapper.Map<CategoryDTO>(category));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error retrieving category", details = ex.Message });
+        }
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateCategory(CategoryDTO dto)
     {
-        var category = _mapper.Map<DAL.Models.Category>(dto);
-        await _categoryRepository.AddAsync(category);
-        return CreatedAtAction(nameof(GetCategoryById), new { id = category.Id }, _mapper.Map<CategoryDTO>(category));
+        try
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(new { message = "Invalid data", errors = ModelState });
+
+            var category = _mapper.Map<DAL.Models.Category>(dto);
+            await _categoryRepository.AddAsync(category);
+
+            return CreatedAtAction(nameof(GetCategoryById),
+                new { id = category.Id },
+                _mapper.Map<CategoryDTO>(category));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error creating category", details = ex.Message });
+        }
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateCategory(int id, CategoryDTO dto)
     {
-        if (id != dto.Id) return BadRequest();
-        var category = await _categoryRepository.GetByIdAsync(id);
-        if (category == null) return NotFound();
-        _mapper.Map(dto, category);
-        await _categoryRepository.UpdateAsync(category);
-        return NoContent();
+        try
+        {
+            if (id != dto.Id)
+                return BadRequest(new { message = "ID mismatch between request and body" });
+
+            var category = await _categoryRepository.GetByIdAsync(id);
+            if (category == null)
+                return NotFound(new { message = $"Category with ID {id} not found" });
+
+            _mapper.Map(dto, category);
+            await _categoryRepository.UpdateAsync(category);
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error updating category", details = ex.Message });
+        }
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteCategory(int id)
     {
-        var category = await _categoryRepository.GetByIdAsync(id);
-        if (category == null) return NotFound();
-        await _categoryRepository.DeleteAsync(id);
-        return NoContent();
+        try
+        {
+            var category = await _categoryRepository.GetByIdAsync(id);
+            if (category == null)
+                return NotFound(new { message = $"Category with ID {id} not found" });
+
+            await _categoryRepository.DeleteAsync(id);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error deleting category", details = ex.Message });
+        }
     }
 
     [HttpDelete("all")]
     public async Task<IActionResult> DeleteAllCategories()
     {
-        var categories = await _categoryRepository.GetAllAsync();
-        foreach (var category in categories)
-            await _categoryRepository.DeleteAsync(category.Id);
-        return NoContent();
+        try
+        {
+            var categories = await _categoryRepository.GetAllAsync();
+
+            foreach (var category in categories)
+                await _categoryRepository.DeleteAsync(category.Id);
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error deleting all categories", details = ex.Message });
+        }
     }
 }

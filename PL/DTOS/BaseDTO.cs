@@ -7,7 +7,7 @@ namespace PL.DTOS
 {
    public class BaseDTO
     {
-        //[JsonIgnore]
+      [JsonIgnore]
         public int Id { get; set; }
         public string Name { get; set; }
     }
